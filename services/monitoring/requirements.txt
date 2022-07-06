@@ -1,0 +1,5 @@
+python-decouple
+minio
+python-decouple
+mlflow
+boto3

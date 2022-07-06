@@ -1,0 +1,20 @@
+version: '3.1'
+
+services:
+
+  db-docet:
+    image: postgres:14.1-bullseye
+    environment: 
+      - POSTGRES_DB=airflow
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 5432:5432
+    volumes:
+      # - db-docet:/var/lib/postgresql/data
+      - ${SQL_FLD}/init.sql:/docker-entrypoint-initdb.d/0-init.sql
+      - ${SQL_FLD}/create_tables.sql:/docker-entrypoint-initdb.d/1-create_tables.sql
+      - ${SQL_FLD}/fill_tables.sql:/docker-entrypoint-initdb.d/2-fill_tables.sql
+
+# volumes:
+#   db-docet: #

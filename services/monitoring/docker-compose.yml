@@ -1,0 +1,59 @@
+version: '3.5'
+
+services:
+
+  nginx:
+    image: nginx:1.20.2
+    restart: unless-stopped
+    depends_on:
+      - mlflow
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - 5000:5000
+    networks:
+      - internal
+
+  db-mlflow:
+    image: postgres:14.1-bullseye
+    restart: unless-stopped
+    shm_size: '256MB'
+    # expose:
+    #   - "5432"
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=mlflow
+    volumes:
+      - db-mlflow:/var/lib/postgresql/data
+    networks:
+      - internal
+  
+  mlflow:
+    build: ./mlflow
+    restart: unless-stopped
+    depends_on:
+      - db-mlflow
+    expose:
+      - "5000"
+    environment:
+      # - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_ACCESS_KEY_ID=${S3_ROOT_USER}
+      - AWS_SECRET_ACCESS_KEY=${S3_ROOT_PASSWORD}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+    entrypoint: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri postgresql://${DB_USER}:${DB_PASSWORD}@db-mlflow:5432/mlflow
+      --default-artifact-root s3://aws-deepracer-nur/mlflow/
+    networks:
+      - internal
+
+volumes:
+  db-mlflow: #
+  # minio-mlflow: #
+
+networks:
+  internal: #
+

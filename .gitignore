@@ -1,0 +1,33 @@
+# Envirmoment
+venv/
+env/
+.env
+
+
+# Trash
+__pycache__
+.pytest_cache/
+.coverage
+dist/
+build/
+tmp/
+deploy/*/*.retry
+*.iml
+.DS_Store
+*.log
+logs
+!logs/*-sample.log
+*.pickle
+
+# IDE
+.vscode
+.idea
+*.iml
+
+# Mac
+.DS_Store
+
+# Garbage
+$RECYCLE.BIN/
+*.bkp
+tmp/

@@ -1,0 +1,7 @@
+{
+  "s3": {
+    "bucket_name": "aws-deepracer-nur",
+    "s3_region": "us-east-1",
+    "s3_profile": "default"
+  }
+}

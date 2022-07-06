@@ -1,0 +1,91 @@
+version: '3.5'
+x-airflow-common:
+  &airflow-common
+  build:
+    dockerfile: ${CUR}/airflow/Dockerfile
+    context: ../../
+    args:
+      - CUR=${CUR}
+      - AWS_CREDENTIALS=${AWS_CREDENTIALS}
+  environment:
+    - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+    - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:postgres@postgres:5432/airflow
+    - AIRFLOW__CORE__FERNET_KEY=FB0o_zt4e3Ziq3LdUUO7F2Z95cvFFx16hU8jTeR1ASM=
+    - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    - AIRFLOW__LOGGING__LOGGING_LEVEL=INFO
+    - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/src/dags
+
+  volumes:
+    - $CUR_ABS/airflow/airflow.cfg:/opt/airflow/airflow.cfg:ro
+    - $CUR_ABS/src:/opt/airflow/src:ro
+    - data-logs:/opt/airflow/logs
+  #    - $HOME/.aws/credentials:/home/airflow/.aws/credentials:ro # only root can access
+  #    - $HOME/.aws/config:/home/airflow/.aws/config:ro # only root can access
+  #  user: "${AIRFLOW_UID:-5000}:${AIRFLOW_GID:-5000}"
+  user: airflow
+  depends_on:
+    - postgres
+  networks:
+    - proxynet
+
+
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=airflow
+      - POSTGRES_PORT=5432
+    volumes:
+      - db:/var/lib/postgresql/data
+      - $CUR_ABS/sql/init.sql:/docker-entrypoint-initdb.d/0-init.sql:ro
+      - $CUR_ABS/sql/create_tables.sql:/docker-entrypoint-initdb.d/1-create_tables.sql:ro
+      - $CUR_ABS/sql/fill_tables.sql:/docker-entrypoint-initdb.d/2-fill_tables.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - proxynet
+
+  airflow-init:
+    <<: *airflow-common
+    container_name: airflow_init
+    profiles:
+      - donotstart
+    entrypoint: [ "/bin/bash","-c" ]
+    user: airflow
+    command:
+      - "airflow users list;
+          airflow db init
+          && airflow users create 
+                  --role Admin 
+                  --username airflow 
+                  --password airflow 
+                  --email airflow@airflow.com 
+                  --firstname airflow 
+                  --lastname airflow;
+          airflow users list"
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: airflow webserver
+#    ports:
+#      - "8080:8080"
+    expose:
+      - "8080"
+    container_name: airflow_webserver
+    restart: always
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: airflow scheduler
+    container_name: airflow_scheduler
+    restart: always
+
+volumes:
+  data-logs: #
+  db: #
+
+networks:
+  proxynet:
+    name: docet_network
