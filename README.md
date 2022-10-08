@@ -11,6 +11,6 @@ To stop
 ```bash
 make monitor_stop
 ```
+## Other
 
-
-## Sheduling
+Some template files for Airflow and fakeDB set-up.
